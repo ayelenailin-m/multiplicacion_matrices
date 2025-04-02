@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplicación de Matrices con servidor Flask</title>
+</head>
+<body>
+    <h1>Multiplicación de matrices</h1>
+
+    <label>Filas de la Matriz 1: <input type="number" id="filas1" min="1"></label>
+    <label>Columnas de la Matriz 1: <input type="number" id="columnas1" min="1"></label>
+    <br>
+    <label>Filas de la Matriz 2: <input type="number" id="filas2" min="1"></label>
+    <label>Columnas de la Matriz 2: <input type="number" id="columnas2" min="1"></label>
+    <br>
+    <button onclick="generarInputs()">Generar Matrices</button>
+
+    <div id="matrices"></div>
+    <button onclick="multiplicarMatrices()" style="display:none;" id="btnMultiplicar">Multiplicar matrices</button>
+
+    <h2>Resultado</h2>
+    <div id="resultado"></div>
+
+    <script>
+        function generarInputs() {
+            let filas1 = parseInt(document.getElementById("filas1").value);
+            let columnas1 = parseInt(document.getElementById("columnas1").value);
+            let filas2 = parseInt(document.getElementById("filas2").value);
+            let columnas2 = parseInt(document.getElementById("columnas2").value);
+            let contenedor = document.getElementById("matrices");
+            contenedor.innerHTML = "";
+
+            // Validar la multiplicación de matrices: columnas de la primera matriz debe ser igual a las filas de la segunda matriz
+            if (columnas1 !== filas2) {
+                alert("El número de columnas de la Matriz 1 debe ser igual al número de filas de la Matriz 2.");
+                return;
+            }
+
+            // Crear entradas para las dos matrices
+            for (let m = 1; m <= 2; m++) {
+                let matrizDiv = document.createElement("div");
+                matrizDiv.innerHTML = `<h3>Matriz ${m}</h3>`;
+                let filas = m === 1 ? filas1 : filas2;
+                let columnas = m === 1 ? columnas1 : columnas2;
+                for (let i = 0; i < filas; i++) {
+                    for (let j = 0; j < columnas; j++) {
+                        matrizDiv.innerHTML += `<input type="number" id="m${m}_${i}_${j}" required>`;
+                    }
+                    matrizDiv.innerHTML += "<br>";
+                }
+                contenedor.appendChild(matrizDiv);
+            }
+            document.getElementById("btnMultiplicar").style.display = "block";
+        }
+
+        function multiplicarMatrices() {
+            let filas1 = parseInt(document.getElementById("filas1").value);
+            let columnas1 = parseInt(document.getElementById("columnas1").value);
+            let filas2 = parseInt(document.getElementById("filas2").value);
+            let columnas2 = parseInt(document.getElementById("columnas2").value);
+
+            // Validación de las matrices
+            if (!filas1 || !columnas1 || !filas2 || !columnas2) {
+                alert("Por favor, ingrese el número de filas y columnas.");
+                return;
+            }
+
+            let matriz1 = [], matriz2 = [];
+
+            // Validar que los valores sean numéricos y que no haya campos vacíos
+            for (let i = 0; i < filas1; i++) {
+                let fila1 = [];
+                for (let j = 0; j < columnas1; j++) {
+                    let valor = parseFloat(document.getElementById(`m1_${i}_${j}`).value);
+                    if (isNaN(valor)) {
+                        alert("Por favor, ingrese valores numéricos válidos");
+                        return;
+                    }
+                    fila1.push(valor);
+                }
+                matriz1.push(fila1);
+            }
+
+            for (let i = 0; i < filas2; i++) {
+                let fila2 = [];
+                for (let j = 0; j < columnas2; j++) {
+                    let valor = parseFloat(document.getElementById(`m2_${i}_${j}`).value);
+                    if (isNaN(valor)) {
+                        alert("Por favor, ingrese valores numéricos válidos.");
+                        return;
+                    }
+                    fila2.push(valor);
+                }
+                matriz2.push(fila2);
+            }
+            // mostrar el resultado más lindo en una tablita
+            function mostrarResultado(resultado) {
+                const contenedorResultado = document.getElementById("resultado");
+                contenedorResultado.innerHTML = "";  // Limpiar contenido previo
+
+                // Crear una tabla para mostrar la matriz
+                const tabla = document.createElement("table");
+                tabla.style.border = "1px solid black";
+                tabla.style.borderCollapse = "collapse";
+
+                // Recorrer la matriz para agregar filas
+                resultado.forEach(fila => {
+                    const tr = document.createElement("tr");
+                    fila.forEach(valor => {
+                        const td = document.createElement("td");
+                        td.textContent = valor;
+                        td.style.border = "1px solid black";
+                        td.style.padding = "10px";
+                        td.style.textAlign = "center";
+                        tr.appendChild(td);
+                    });
+                    tabla.appendChild(tr);
+                });
+
+                // Agregar la tabla al contenedor
+                contenedorResultado.appendChild(tabla);
+            }
+
+            fetch('/multiplicar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    matriz1: matriz1,
+                    matriz2: matriz2
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    mostrarResultado(data.resultado);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Hubo un error en la multiplicación.');
+            }); 
+        }
+    </script>
+</body>
+</html>
